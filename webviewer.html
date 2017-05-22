@@ -150,7 +150,7 @@
       $('body').scrollTop($("img").last().prev().offset().top);
     });
     $("#btn_go").on("click", function() {
-      jumpToPage($("#txtPage").val() - 1);
+      jumpToPage($("#txtPage").val());
     });
     $('#txtPage').keypress(function(e){
       if(e.keyCode == 13)
