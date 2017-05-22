@@ -94,7 +94,13 @@
     return match && decodeURIComponent(match[1].replace(/\+/g, " "));
   }
 
-  var folder = qs("folder") + "/";
+  var folder = "titles/" + qs("title") + "/"
+  var volume = qs("vol");
+  if (volume) {
+    folder += "vol" + volume + "/";
+    var chapter = qs("chap");
+    if (chapter) folder += "chap" + chapter +"/";
+  }
 
   function jumpToPage(page){
     $('body').scrollTop($("img").eq(page - 1).prev().offset().top);
