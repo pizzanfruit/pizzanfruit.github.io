@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Web viewer</title>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <script src="js/jquery-3.2.1.min.js"></script>
+  <script src="js/js.cookie.js"></script>
+  <script src="js/isInViewport.min.js"></script>
+  <style>
+  body {
+    background-color: gray;
+  }
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    border: 1px solid;
+  }
+  .sidebar {
+    max-width: 160.9px;
+    background-color: silver;
+    position: fixed;
+    left: 10px;
+    border: 1px solid black;
+    padding: 10px;
+  }
+  .squareButton {
+    height: 30px;
+    width: 30px;
+  }
+  .rectButton {
+    height: 30px;
+    width: 64px;
+  }
+  .text {
+    color: white;
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+  }
+  #txtPage {
+    width: 60px;
+    text-align: center;
+  }
+  #btn_bookmark {
+    width: 101px;
+  }
+  .feedback {
+    display:block;
+    word-wrap: break-word;
+    width: 160px;
+    margin-top: 5px;
+  }
+  #btn_toggle {
+    float: right;
+    width: 50px;
+  }
+  h1 {
+    white-space: nowrap;
+  }
+  .pageCount {
+    margin-top: 15px;
+  }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <button id="btn_toggle" type="button">Hide</button>
+    <div class="togglable">
+      <h1>Web viewer</h1>
+      <button class="squareButton" id="btn_zoom_in" type="button">+</button>
+      <button class="squareButton" id="btn_zoom_out" type="button">-</button>
+      <br>
+      <button class="rectButton" id="btn_first" type="button">First</button>
+      <br>
+      <button class="rectButton" id="btn_last" type="button">Last</button>
+      <br>
+      <input id="txtPage" type="text" name="page">
+      <button id="btn_go" type="button">Go</button>
+      <br>
+      <button id="btn_bookmark" type="button">Bookmark</button>
+      <br>
+      <!-- <span class="feedback" id="fb_scroll"></span> -->
+      <span class="feedback" id="fb_page"></span>
+      <span class="feedback" id="fb_zoom"></span>
+      <div class="pageCount">Page count</div>
+    </div>
+  </div>
+  <div class="images" style="width: 70%"></div>
+  <script>
+
+  function qs(key) {
+    key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
+    var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
+    return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+  }
+
+  var folder = qs("folder") + "/";
+
+  function jumpToPage(page){
+    $('body').scrollTop($("img").eq(page - 1).prev().offset().top);
+  }
+
+  function getCurPage(){
+    return parseInt($('img:in-viewport').first().prev().text());
+  }
+
+  $(function(){
+    var count = 0;
+    $.ajax({
+      url : folder,
+      success: function (data) {
+        $(data).find("a").attr("href", function (i, val) {
+          if(val.match(/\.(jpe?g|png|gif)$/i)) {
+            $(".images").append("<div class='text'><b>" + (++count) + "</b></div>" + "<img src='"+ folder + val +"'>" );
+          }
+        });
+      },
+      complete: function (data) {
+        afterAjax();
+      }
+    });
+    var w = $('.sidebar').outerWidth();
+    $('.images').css("margin-left", (parseFloat(w) + 10) + "px");
+    $(".images").on("click", "img", function() {
+      $('body').animate({
+        scrollTop:$(this).nextAll("img").first().prev().offset().top
+      }, 400);
+    });
+
+    $("#btn_zoom_in").on("click", function() {
+      var curPage = getCurPage();
+      $(".images").css({"width": (parseFloat($(".images")[0].style.width) + 5) + "%"});
+      jumpToPage(curPage);
+    });
+    $("#btn_zoom_out").on("click", function() {
+      var curPage = getCurPage();
+      $(".images").css({"width": (parseFloat($(".images")[0].style.width) - 5) + "%"});
+      jumpToPage(curPage);
+    });
+    $("#btn_first").on("click", function() {
+      $('body').scrollTop($("img").first().prev().offset().top);
+    });
+    $("#btn_last").on("click", function() {
+      $('body').scrollTop($("img").last().prev().offset().top);
+    });
+    $("#btn_go").on("click", function() {
+      jumpToPage($("#txtPage").val() - 1);
+    });
+    $('#txtPage').keypress(function(e){
+      if(e.keyCode == 13)
+      $('#btn_go').click();
+    });
+    $("#btn_bookmark").on("click", function() {
+      //var pos = $('body').scrollTop();
+      var oldBmPage = Cookies.get(folder + 'page');
+      var page = getCurPage();
+      var size = parseFloat($(".images")[0].style.width);
+      //Cookies.set('scroll', pos, {expires: 7});
+      Cookies.set(folder + 'page', page, {expires: 7});
+      Cookies.set(folder + 'zoom', size, {expires: 7});
+      $('img').eq(oldBmPage - 1).css("border", "1px solid black");
+      $('img').eq(oldBmPage - 1).prev().css("text-shadow", "-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black");
+      $('img').eq(page - 1).css("border", "2px solid red");
+      $('img').eq(page - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
+      //$("#fb_scroll").text("Added bookmark at position " + pos + ".");
+      $("#fb_page").html("Added bookmark at page <b>" + page + "</b>.");
+      $("#fb_zoom").html("Remembered content size at <b>" + size + "%</b>.");
+    });
+    $("#btn_toggle").on("click", function() {
+      $('.togglable').toggle("slow", function(){
+        if ($("#btn_toggle").text() == "Hide"){
+          $("#btn_toggle").text("Show");
+        } else {
+          $("#btn_toggle").text("Hide");
+        }
+      });
+    });
+    $(window).scroll(function() {
+      $(".pageCount").html("Page <b>" + getCurPage() + "</b> of <b>" + $("img").length + "</b>");
+    });
+  });
+
+  function afterAjax() {
+    //var bmScroll = null;
+    var bmPage = Cookies.get(folder + 'page');
+    var bmZoom = Cookies.get(folder + 'zoom')
+    if (bmPage && bmZoom) {
+      // $('body').animate({
+      //   scrollTop: bmScroll
+      // }, 1000);
+      //$("#fb_scroll").text("Recovered bookmark at position " + bmScroll + ".");
+      $(".images").css({"width": bmZoom + "%"});
+      $("#fb_zoom").html("Recovered content size at <b>" + bmZoom + "%</b>.");
+      $('body').scrollTop($("img").eq(bmPage - 1).prev().offset().top);
+      $('img').eq(bmPage - 1).css("border", "2px solid red");
+      $('img').eq(bmPage - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
+      $("#fb_page").html("Jumped to bookmarked page <b>" + bmPage + "</b>.");
+    }
+    $(".pageCount").html("Page <b>" + getCurPage() + "</b> of <b>" + $("img").length + "</b>");
+  }
+
+  var done = true;
+
+  $(document).keydown(function(e) {
+    var curPage = getCurPage();
+    var prev = $("img").eq(curPage - 2);
+    var next = $("img").eq(curPage);
+    if (!done) return;
+    switch(e.which) {
+      case 37: // left
+      e.preventDefault(); // prevent the default action (scroll / move caret)
+      if (curPage > 1) {
+        done = false;
+        $('body').animate({
+          scrollTop: prev.prev().offset().top
+        }, {
+          duration: 500,
+          complete: function(){
+            done = true;
+          }
+        });
+      }
+      break;
+      case 38: // up
+      break;
+      case 39: // right
+      e.preventDefault(); // prevent the default action (scroll / move caret)
+      if (next.length != 0) {
+        done = false;
+        $('body').animate({
+          scrollTop: next.prev().offset().top
+        }, {
+          duration: 500,
+          complete: function(){
+            done = true;
+          }
+        });
+      }
+      break;
+      case 40: // down
+      break;
+      default: return; // exit this handler for other keys
+    }
+  });
+  // (function(window){
+  //   var supportPageOffset = window.pageXOffset !== undefined;
+  //   var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
+  //   var sidebar = document.getElementById("fixed");
+  //   window.addEventListener("scroll", function(e) {
+  //     var x = supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
+  //     sidebar.style.left = -x + 10 + "px";
+  //   });
+  // })(window);
+  </script>
+</body>
+</html>
