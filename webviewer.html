@@ -182,8 +182,8 @@
       $('img').eq(page - 1).css("border", "2px solid red");
       $('img').eq(page - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
       //$("#fb_scroll").text("Added bookmark at position " + pos + ".");
-      $("#fb_page").html("Added bookmark at page <b>" + page + "</b>.");
-      $("#fb_zoom").html("Remembered content size at <b>" + size + "%</b>.");
+      $("#fb_page").html("● Added bookmark at page <b>" + page + "</b>.");
+      $("#fb_zoom").html("● Remembered content size at <b>" + size + "%</b>.");
     });
     $("#btn_toggle").on("click", function() {
       $('.togglable').toggle("slow", function(){
