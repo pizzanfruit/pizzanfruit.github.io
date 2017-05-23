@@ -197,12 +197,34 @@
       //$("#fb_scroll").text("Recovered bookmark at position " + bmScroll + ".");
       $(".images").css({"width": bmZoom + "%"});
       $("#fb_zoom").html("Recovered content size at <b>" + bmZoom + "%</b>.");
-      $('body').scrollTop($("img").eq(bmPage - 1).prev().offset().top);
-      $('img').eq(bmPage - 1).css("border", "2px solid red");
-      $('img').eq(bmPage - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
-      $("#fb_page").html("Jumped to bookmarked page <b>" + bmPage + "</b>.");
+      var i = 0;
+      var intervalLoading = setInterval(function() {
+        var j = ++i % 4;
+        $("#fb_page").html("Loading images. Please wait" + Array(j + 1).join("."));
+      }, 500);
+      waitForImages(function(){
+        clearInterval(intervalLoading);
+        $('body').scrollTop($("img").eq(bmPage - 1).prev().offset().top);
+        $('img').eq(bmPage - 1).css("border", "2px solid red");
+        $('img').eq(bmPage - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
+        $("#fb_page").html("Jumped to bookmarked page <b>" + bmPage + "</b>.");
+      });
     }
     $(".pageCount").html("Page <b>" + getCurPage() + "</b> of <b>" + $("img").length + "</b>");
+  }
+
+  function waitForImages(callback){
+    var $img = $('.images img');
+    totalImg = $img.length;
+
+    var waitImgLoad = function () {
+        totalImg--;
+        if (!totalImg) {
+            callback();
+        }
+    };
+    $img.on("load", waitImgLoad)
+        .on("error", waitImgLoad);
   }
 
   var done = true;
