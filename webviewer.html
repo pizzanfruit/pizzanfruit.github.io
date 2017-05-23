@@ -211,13 +211,7 @@
       // }, 1000);
       //$("#fb_scroll").text("Recovered bookmark at position " + bmScroll + ".");
       $(".images").css({"width": bmZoom + "%"});
-      $("#fb_zoom").html("● Recovered content size at <b>" + bmZoom + "%</b>.");
-      $(document).ready(function(){
-        $('body').scrollTop($("img").eq(bmPage - 1).prev().offset().top);
-        $('img').eq(bmPage - 1).css("border", "2px solid red");
-        $('img').eq(bmPage - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
-        $("#fb_page").html("● Jumped to bookmarked page <b>" + bmPage + "</b>.");
-      });
+      $("#fb_zoom").html("● Recovered content size at <b>" + bmZoom + "%</b>.");      
       var i = 0;
       var progress = 0;
       var totalImg = $('.images img').length;
@@ -231,6 +225,10 @@
       waitForImages(function(){
         clearInterval(intervalLoading);
         $("#fb_load").html("");
+        jumpToPage(bmPage);
+        $('img').eq(bmPage - 1).css("border", "2px solid red");
+        $('img').eq(bmPage - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
+        $("#fb_page").html("● Jumped to bookmarked page <b>" + bmPage + "</b>.");
       });
     }
     $(".pageCount").html("Page <b>" + getCurPage() + "</b> of <b>" + $("img").length + "</b>");
