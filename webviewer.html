@@ -5,25 +5,42 @@
   <meta http-equiv="Content-type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
   <script src="js/jquery-3.2.1.min.js"></script>
   <script src="js/js.cookie.js"></script>
   <script src="js/isInViewport.min.js"></script>
   <style>
+  * {
+    box-sizing: border-box;
+  }
   body {
     background-color: gray;
+    font-family: "Roboto";
+  }
+  h1 {
+    white-space: nowrap;
   }
   img {
     max-width: 100%;
     max-height: 100%;
     border: 1px solid;
   }
+  button {
+    height: 30px;
+  }
+  input {
+    height: 30px;
+  }
   .sidebar {
-    max-width: 160.9px;
     background-color: silver;
     position: fixed;
     left: 10px;
     border: 1px solid black;
     padding: 10px;
+  }
+  #btn_toggle {
+    width: 50px;
+    margin-left: calc(100% - 50px);
   }
   .squareButton {
     height: 30px;
@@ -38,24 +55,18 @@
     text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
   }
   #txtPage {
-    width: 60px;
+    width: 64px;
     text-align: center;
   }
   #btn_bookmark {
     width: 101px;
+    margin-bottom: 20px;
   }
   .feedback {
     display:block;
     word-wrap: break-word;
-    width: 160px;
     margin-top: 5px;
-  }
-  #btn_toggle {
-    float: right;
-    width: 50px;
-  }
-  h1 {
-    white-space: nowrap;
+    max-width: 100%;
   }
   .pageCount {
     margin-top: 15px;
@@ -82,6 +93,7 @@
       <!-- <span class="feedback" id="fb_scroll"></span> -->
       <span class="feedback" id="fb_page"></span>
       <span class="feedback" id="fb_zoom"></span>
+      <span class="feedback" id="fb_load"></span>
       <div class="pageCount">Page count</div>
     </div>
   </div>
@@ -126,6 +138,7 @@
       }
     });
     var w = $('.sidebar').outerWidth();
+    $('.feedback').css("max-width", (parseFloat(w) - 20) + "px");
     $('.images').css("margin-left", (parseFloat(w) + 10) + "px");
     $(".images").on("click", "img", function() {
       $('body').animate({
@@ -186,6 +199,8 @@
     });
   });
 
+  var imgCountdown = 0;
+
   function afterAjax() {
     //var bmScroll = null;
     var bmPage = Cookies.get(folder + 'page');
@@ -196,18 +211,26 @@
       // }, 1000);
       //$("#fb_scroll").text("Recovered bookmark at position " + bmScroll + ".");
       $(".images").css({"width": bmZoom + "%"});
-      $("#fb_zoom").html("Recovered content size at <b>" + bmZoom + "%</b>.");
-      var i = 0;
-      var intervalLoading = setInterval(function() {
-        var j = ++i % 4;
-        $("#fb_page").html("Loading images. Please wait" + Array(j + 1).join("."));
-      }, 500);
-      waitForImages(function(){
-        clearInterval(intervalLoading);
+      $("#fb_zoom").html("● Recovered content size at <b>" + bmZoom + "%</b>.");
+      $(document).ready(function(){
         $('body').scrollTop($("img").eq(bmPage - 1).prev().offset().top);
         $('img').eq(bmPage - 1).css("border", "2px solid red");
         $('img').eq(bmPage - 1).prev().css("text-shadow", "-1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red");
-        $("#fb_page").html("Jumped to bookmarked page <b>" + bmPage + "</b>.");
+        $("#fb_page").html("● Jumped to bookmarked page <b>" + bmPage + "</b>.");
+      });
+      var i = 0;
+      var progress = 0;
+      var totalImg = $('.images img').length;
+      var intervalLoading = setInterval(function() {
+        var j = ++i % 5;
+        if (imgCountdown) {
+          progress = parseInt((totalImg - imgCountdown) / totalImg * 100);
+        }
+        $("#fb_load").html("Loading images" + Array(j + 1).join(".") + Array(6 - j).join("&nbsp") + "<b>" + progress + "%</b>");
+      }, 500);
+      waitForImages(function(){
+        clearInterval(intervalLoading);
+        $("#fb_load").html("");
       });
     }
     $(".pageCount").html("Page <b>" + getCurPage() + "</b> of <b>" + $("img").length + "</b>");
@@ -215,11 +238,11 @@
 
   function waitForImages(callback){
     var $img = $('.images img');
-    totalImg = $img.length;
+    imgCountdown = $img.length;
 
     var waitImgLoad = function () {
-        totalImg--;
-        if (!totalImg) {
+        imgCountdown--;
+        if (!imgCountdown) {
             callback();
         }
     };
