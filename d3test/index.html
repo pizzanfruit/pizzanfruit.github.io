@@ -305,7 +305,9 @@
     /****** Distribution graph *****/
 
     let dataset2 = [];
+    let maxValue = min;
     for (let [key, value] of answerDist) {
+      if (maxValue < value) maxValue = value;
       dataset2.push({ x: key, y: value });
     }
 
@@ -318,7 +320,7 @@
 
     yScale2 = d3
       .scaleLinear()
-      .domain([0, n])
+      .domain([0, maxValue])
       .range([height, 0]);
 
     plotline2 = d3
@@ -437,11 +439,13 @@
 
     /****** Distribution graph *****/
     let newDataset2 = [];
+    let maxValue = min;
     for (let [key, value] of answerDist) {
+      if (maxValue < value) maxValue = value;
       newDataset2.push({ x: key, y: value });
     }
     xScale2.domain([min, max]).range([0, width]);
-    yScale2.domain([0, n]).range([height, 0]);
+    yScale2.domain([0, maxValue]).range([height, 0]);
 
     axisBottom2
       .transition()
