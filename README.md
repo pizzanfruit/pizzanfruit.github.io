@@ -10,3 +10,7 @@ Simple hobby projects
 ## Fun
 
 - [Lobby](https://pizzanfruit.github.io/fun)
+
+## D3
+
+- [Random numbers with fixed mean](https://pizzanfruit.github.io/d3test)

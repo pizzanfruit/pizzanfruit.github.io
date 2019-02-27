@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Graphs</title>
+  <link
+    href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/spectre.css/dist/spectre.min.css"
+  />
+</head>
+
+<style type="text/css">
+  body {
+    font-family: "IBM Plex Sans", sans-serif;
+    padding-bottom: 30px;
+    padding-top: 30px;
+  }
+
+  .form {
+    width: 200px;
+    max-width: 90%;
+    margin: 0 auto;
+  }
+  .line1 {
+    fill: none;
+    stroke: orange;
+    stroke-width: 3;
+  }
+
+  .meanline {
+    fill: none;
+    stroke: red;
+    stroke-width: 3;
+  }
+
+  .line2 {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 3;
+  }
+
+  .overlay {
+    fill: none;
+    pointer-events: all;
+  }
+
+  .dot1 {
+    fill: orange;
+    stroke: #fff;
+  }
+
+  .dot2 {
+    fill: steelblue;
+    stroke: #fff;
+  }
+
+  .graph-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+    display: none;
+  }
+</style>
+<body>
+  <div class="form">
+    <div class="form-group">
+      <label class="form-label" for="input-n">n</label>
+      <input
+        class="form-input"
+        type="number"
+        min="1"
+        max="10000"
+        id="input-n"
+        placeholder="100"
+      />
+      <label class="form-label" for="input-min">Min</label>
+      <input class="form-input" type="number" id="input-min" placeholder="1" />
+      <label class="form-label" for="input-max">Max</label>
+      <input class="form-input" type="number" id="input-max" placeholder="10" />
+      <label class="form-label" for="input-desired-mean">Desired mean</label>
+      <input
+        class="form-input"
+        type="number"
+        step="0.01"
+        id="input-desired-mean"
+        placeholder="8"
+      />
+    </div>
+    <div>
+      <button
+        class="btn btn-primary"
+        style="width: 100%"
+        onClick="regenerateGraph()"
+      >
+        Generate graphs
+      </button>
+    </div>
+  </div>
+  <div class="graph graph1"></div>
+  <div class="graph-title">Array</div>
+  <div class="graph graph2"></div>
+  <div class="graph-title">Distribution</div>
+</body>
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script>
+  // Generate random array with desired mean
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function generateData() {
+    // Given
+    let n = parseInt(document.getElementById("input-n").value);
+    if (isNaN(n)) n = 100;
+    let min = parseInt(document.getElementById("input-min").value);
+    if (isNaN(min)) min = 1;
+    let max = parseInt(document.getElementById("input-max").value);
+    if (isNaN(max)) max = 10;
+    let desiredMean = parseInt(
+      document.getElementById("input-desired-mean").value
+    );
+    if (isNaN(desiredMean)) desiredMean = 8;
+
+    const desiredSum = desiredMean * n;
+    // Basic input validation
+    if (min > max) return alert("Min should be lower than max!");
+    if (n > 10000 || n < 1) return alert("n too large!");
+    if (!Number.isInteger(desiredSum) || desiredMean < min || desiredMean > max)
+      return alert("Impossible mean!");
+    // Start solving
+    const answers = [];
+    let answerDist = new Map();
+
+    let sum = 0;
+
+    for (i = 0; i < n; i++) {
+      // rand between 1 and 10
+      const randNum = rand(min, max);
+      answers[i] = randNum;
+      answerDist.set(randNum, answerDist.get(randNum) + 1 || 1);
+      sum += randNum;
+    }
+
+    while (desiredSum != sum) {
+      const randIdx = rand(0, n - 1);
+      const curr = answers[randIdx];
+      const deviation = desiredSum - sum;
+      let newNum;
+      if (deviation > 0) {
+        if (max - curr > deviation) {
+          newNum = rand(curr, curr + deviation);
+        } else {
+          newNum = rand(curr, max);
+        }
+      } else {
+        if (curr - min > -deviation) {
+          newNum = rand(curr + deviation, curr);
+        } else {
+          newNum = rand(min, curr);
+        }
+      }
+      answers[randIdx] = newNum;
+      answerDist.set(curr, answerDist.get(curr) - 1 || 0);
+      answerDist.set(newNum, answerDist.get(newNum) + 1 || 1);
+      sum = sum - curr + newNum;
+    }
+    answerDist = new Map(
+      [...answerDist.entries()].sort((a, b) => {
+        return a[0] - b[0];
+      })
+    );
+    console.log(answers);
+    console.log(answerDist);
+    return { n, min, max, desiredMean, answers, answerDist };
+  }
+
+  // Show graph titles
+  graphTitles = document.getElementsByClassName("graph-title");
+
+  for (title of graphTitles) {
+    title.style.display = "block";
+  }
+
+  // Generate data for the first time
+  let { n, min, max, desiredMean, answers, answerDist } = generateData();
+
+  let line1,
+    line2,
+    svg1,
+    svg2,
+    xScale1,
+    xScale2,
+    yScale1,
+    yScale2,
+    plotline1,
+    plotline2,
+    axisBottom1,
+    axisBottom2,
+    axisLeft1,
+    axisLeft2,
+    width,
+    height;
+
+  generateGraph();
+  window.onresize = generateGraph;
+
+  function generateGraph() {
+    function newGraph(selector) {
+      return d3
+        .select(selector)
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    }
+
+    const margin = {
+      top: 50,
+      right: window.innerWidth * 0.05,
+      bottom: 50,
+      left: window.innerWidth * 0.05
+    };
+    width = window.innerWidth - margin.left - margin.right;
+    height = window.innerHeight * 0.3 - margin.top - margin.bottom;
+
+    const graphs = d3.selectAll(".graph");
+    graphs.selectAll("svg").remove();
+
+    /****** Array graph *****/
+
+    const dataset1 = answers.map(answer => {
+      return {
+        y: answer
+      };
+    });
+
+    svg1 = newGraph(".graph1");
+
+    xScale1 = d3
+      .scaleLinear()
+      .domain([0, n - 1])
+      .range([0, width]);
+
+    yScale1 = d3
+      .scaleLinear()
+      .domain([min, max])
+      .range([height, 0]);
+
+    plotline1 = d3
+      .line()
+      .x(function(d, i) {
+        return xScale1(i);
+      })
+      .y(function(d) {
+        return yScale1(d.y);
+      })
+      .curve(d3.curveMonotoneX);
+
+    axisBottom1 = svg1
+      .append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(xScale1).ticks(10));
+
+    axisLeft1 = svg1
+      .append("g")
+      .attr("class", "y axis")
+      .call(d3.axisLeft(yScale1));
+
+    line1 = svg1
+      .append("path")
+      .datum(dataset1)
+      .attr("class", "line1")
+      .attr("d", plotline1);
+
+    meanline = svg1
+      .append("line")
+      .attr("class", "meanline")
+      .attr("x1", 0)
+      .attr("y1", yScale1(desiredMean))
+      .attr("x2", width)
+      .attr("y2", yScale1(desiredMean));
+
+    svg1
+      .selectAll(".dot")
+      .data(dataset1)
+      .enter()
+      .append("circle")
+      .attr("class", "dot1")
+      .attr("cx", function(d, i) {
+        return xScale1(i);
+      })
+      .attr("cy", function(d) {
+        return yScale1(d.y);
+      })
+      .attr("r", 5);
+
+    /****** Distribution graph *****/
+
+    let dataset2 = [];
+    for (let [key, value] of answerDist) {
+      dataset2.push({ x: key, y: value });
+    }
+
+    svg2 = newGraph(".graph2");
+
+    xScale2 = d3
+      .scaleLinear()
+      .domain([min, max])
+      .range([0, width]);
+
+    yScale2 = d3
+      .scaleLinear()
+      .domain([0, n])
+      .range([height, 0]);
+
+    plotline2 = d3
+      .line()
+      .x(function(d) {
+        return xScale2(d.x);
+      })
+      .y(function(d) {
+        return yScale2(d.y);
+      });
+    // .curve(d3.curveMonotoneX);
+
+    axisBottom2 = svg2
+      .append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(xScale2));
+
+    axisLeft2 = svg2
+      .append("g")
+      .attr("class", "y axis")
+      .call(d3.axisLeft(yScale2));
+
+    line2 = svg2
+      .append("path")
+      .datum(dataset2)
+      .attr("class", "line2")
+      .attr("d", plotline2);
+
+    svg2
+      .selectAll(".dot")
+      .data(dataset2)
+      .enter()
+      .append("circle")
+      .attr("class", "dot2")
+      .attr("cx", function(d) {
+        return xScale2(d.x);
+      })
+      .attr("cy", function(d) {
+        return yScale2(d.y);
+      })
+      .attr("r", 5);
+  }
+
+  function regenerateGraph() {
+    ({ n, min, max, desiredMean, answers, answerDist } = generateData());
+    if (!answers) return;
+    /****** Array graph *****/
+    const newDataset1 = answers.map(answer => {
+      return {
+        y: answer
+      };
+    });
+    xScale1.domain([0, n - 1]).range([0, width]);
+    yScale1.domain([min, max]).range([height, 0]);
+
+    axisBottom1
+      .transition()
+      .duration(750)
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(xScale1));
+
+    axisLeft1
+      .transition()
+      .duration(750)
+      .call(d3.axisLeft(yScale1));
+
+    line1
+      .datum(newDataset1)
+      .transition()
+      .duration(750)
+      .attr("d", plotline1);
+
+    meanline
+      .transition()
+      .duration(750)
+      .attr("x1", 0)
+      .attr("y1", yScale1(desiredMean))
+      .attr("x2", width)
+      .attr("y2", yScale1(desiredMean));
+
+    // Update all circles
+    svg1
+      .selectAll("circle")
+      .data(newDataset1)
+      .transition()
+      .duration(750)
+      .attr("cx", function(d, i) {
+        return xScale1(i);
+      })
+      .attr("cy", function(d) {
+        return yScale1(d.y);
+      });
+
+    // Enter new circles
+    svg1
+      .selectAll("circle")
+      .data(newDataset1)
+      .enter()
+      .append("circle")
+      .attr("class", "dot1")
+      .attr("cx", function(d, i) {
+        return xScale1(i);
+      })
+      .attr("cy", function(d) {
+        return yScale1(d.y);
+      })
+      .attr("r", 5);
+
+    // Remove old
+    svg1
+      .selectAll("circle")
+      .data(newDataset1)
+      .exit()
+      .remove();
+
+    /****** Distribution graph *****/
+    let newDataset2 = [];
+    for (let [key, value] of answerDist) {
+      newDataset2.push({ x: key, y: value });
+    }
+    xScale2.domain([min, max]).range([0, width]);
+    yScale2.domain([0, n]).range([height, 0]);
+
+    axisBottom2
+      .transition()
+      .duration(750)
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(xScale2));
+
+    axisLeft2
+      .transition()
+      .duration(750)
+      .call(d3.axisLeft(yScale2));
+    line2
+      .datum(newDataset2)
+      .transition()
+      .duration(750)
+      .attr("d", plotline2);
+
+    // Update all circles
+    svg2
+      .selectAll("circle")
+      .data(newDataset2)
+      .transition()
+      .duration(750)
+      .attr("cx", function(d, i) {
+        return xScale2(d.x);
+      })
+      .attr("cy", function(d) {
+        return yScale2(d.y);
+      });
+
+    // Enter new circles
+    svg2
+      .selectAll("circle")
+      .data(newDataset2)
+      .enter()
+      .append("circle")
+      .attr("class", "dot2")
+      .attr("cx", function(d, i) {
+        return xScale2(d.x);
+      })
+      .attr("cy", function(d) {
+        return yScale2(d.y);
+      })
+      .attr("r", 5);
+
+    // // Remove old
+    svg2
+      .selectAll("circle")
+      .data(newDataset2)
+      .exit()
+      .remove();
+  }
+</script>
