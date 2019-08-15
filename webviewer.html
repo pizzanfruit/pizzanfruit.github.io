@@ -221,59 +221,53 @@
                         });
                 },
                 complete: function (data) {
-                    afterAjax();
+                    showLoadingForSample();
+                    afterImagesLoaded();
                 }
             });
         }
-
-        $(function () {
-            if (!FileReader) {
-                alert("Not supported browser!");
-                return;
-            }
-            let folder = "titles/" + qs("title") + "/";
-            let volume = qs("vol");
+        const title = qs("title");
+        let folder;
+        if (title) {
+            folder = "titles/" + title + "/";
+            const volume = qs("vol");
             if (volume) {
                 folder += "vol" + volume + "/";
                 let chapter = qs("chap");
                 if (chapter) folder += "chap" + chapter + "/";
             }
+        }
+
+        $(function () {
             if (folder) {
                 loadSampleManga(folder);
             }
-
             // User select folder
             $("#filepicker").change(function () {
+                if (!FileReader) {
+                    alert("Not supported browser!");
+                    return;
+                }
                 // Load images
                 let files = this.files;
                 let allImagesLoadedPromises = [];
                 if (files && files.length) {
-                    // let intervalLoading = setInterval(function() {
-                    //   let j = ++i % 5;
-                    //   if (imgCountdown) {
-                    //     progress = parseInt(((totalImg - imgCountdown) / totalImg) * 100);
-                    //   }
-                    //   $("#fb_load").html(
-                    //     "Loading images" +
-                    //       Array(j + 1).join(".") +
-                    //       Array(6 - j).join("&nbsp") +
-                    //       "<b>" +
-                    //       progress +
-                    //       "%</b>"
-                    //   );
-                    // }, 500);
                     $(".images").html("");
                     let k = 0;
                     let loadedCount = 0;
                     console.log();
                     const loc = files[0].webkitRelativePath;
                     if (loc) folder = loc.substring(0, loc.lastIndexOf("/"));
+                    let pageCount = 0;
                     for (let i = 0; i < files.length; i++) {
+                        const fileType = files[i].type;
+                        // Skip if it's not an image file
+                        if (fileType.substring(0, fileType.indexOf("/")) !== "image") continue;
                         const p = new Promise(function (resolve, reject) {
                             const fr = new FileReader();
                             fr.onload = function (e) {
                                 $(".images").append(
-                                    `<div class='text'><b>${i + 1}</b></div><img src='${
+                                    `<div class='text'><b>${++pageCount}</b></div><img src='${
                                     e.target.result
                                     }'>`
                                 );
@@ -410,6 +404,10 @@
         let imgCountdown = 0;
 
         function afterImagesLoaded() {
+            if ($(".images").children().length === 0) {
+                console.log("Nothing is loaded yet!");
+                return;
+            }
             $("#fb_load").html("");
             let bmScroll = null;
             let bmPage = Cookies.get(folder + "page");
@@ -430,26 +428,6 @@
                 $("#fb_zoom").html(
                     "● Recovered content size at <b>" + bmZoom + "%</b>."
                 );
-                // let i = 0;
-                // let progress = 0;
-                // let totalImg = $(".images img").length;
-                // let intervalLoading = setInterval(function() {
-                //   let j = ++i % 5;
-                //   if (imgCountdown) {
-                //     progress = parseInt(((totalImg - imgCountdown) / totalImg) * 100);
-                //   }
-                //   $("#fb_load").html(
-                //     "Loading images" +
-                //       Array(j + 1).join(".") +
-                //       Array(6 - j).join("&nbsp") +
-                //       "<b>" +
-                //       progress +
-                //       "%</b>"
-                //   );
-                // }, 500);
-                // waitForImages(function() {
-                //   clearInterval(intervalLoading);
-                // });
             }
             if (bmPage) {
                 let bmImage = $("img").eq(bmPage - 1);
@@ -471,18 +449,42 @@
             );
         }
 
-        // function waitForImages(callback) {
-        //   let $img = $(".images img");
-        //   imgCountdown = $img.length;
+        function showLoadingForSample() {
+            let i = 0;
+            let progress = 0;
+            let totalImg = $(".images img").length;
+            let intervalLoading = setInterval(function () {
+                let j = ++i % 5;
+                if (imgCountdown) {
+                    progress = parseInt(((totalImg - imgCountdown) / totalImg) * 100);
+                }
+                $("#fb_load").html(
+                    "Loading images" +
+                    Array(j + 1).join(".") +
+                    Array(6 - j).join("&nbsp") +
+                    "<b>" +
+                    progress +
+                    "%</b>"
+                );
+            }, 500);
+            waitForImages(function () {
+                $("#fb_load").html("");
+                clearInterval(intervalLoading);
+            });
+        }
 
-        //   let waitImgLoad = function() {
-        //     imgCountdown--;
-        //     if (!imgCountdown) {
-        //       callback();
-        //     }
-        //   };
-        //   $img.on("load", waitImgLoad).on("error", waitImgLoad);
-        // }
+        function waitForImages(callback) {
+            let $img = $(".images img");
+            imgCountdown = $img.length;
+
+            let waitImgLoad = function () {
+                imgCountdown--;
+                if (imgCountdown === 0) {
+                    callback();
+                }
+            };
+            $img.on("load", waitImgLoad).on("error", waitImgLoad);
+        }
 
         let done = true;
 
