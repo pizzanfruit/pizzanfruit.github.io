@@ -8,7 +8,7 @@ function qs(key) {
 
 function jumpToPage(page) {
     const offset = $("img")
-        .eq(123)
+        .eq(page - 1)
         .prev()
         .offset();
     if (offset != null) $("html").scrollTop(offset.top);
