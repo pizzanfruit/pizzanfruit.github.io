@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Web viewer</title>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <link
+      rel="shortcut icon"
+      href="/webviewer/favicon.ico"
+      type="image/x-icon"
+    />
+    <link rel="icon" href="/webviewer/favicon.ico" type="image/x-icon" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link href="css/webviewer.css" rel="stylesheet" />
+    <script src="js/libs/jquery-3.2.1.min.js"></script>
+    <script src="js/libs/js.cookie.js"></script>
+    <script src="js/libs/isInViewport.min.js"></script>
+    <script src="js/webviewer.js"></script>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <button id="btn_toggle" type="button">Hide</button>
+      <div class="togglable">
+        <h1>Webviewer</h1>
+        <label for="filepicker" class="custom-filepicker">
+          <i class="material-icons">
+            create_new_folder
+          </i>
+        </label>
+        <input
+          type="file"
+          id="filepicker"
+          name="fileList"
+          webkitdirectory
+          multiple
+        />
+        <br />
+        <button class="squareButton" id="btn_zoom_in" type="button">+</button>
+        <button class="squareButton" id="btn_zoom_out" type="button">-</button>
+        <button class="squareButton" id="btn_fit" type="button">⇔</button>
+        <br />
+        <button class="rectButton" id="btn_first" type="button">First</button>
+        <br />
+        <button class="rectButton" id="btn_last" type="button">Last</button>
+        <br />
+        <input id="txtPage" type="text" name="page" />
+        <button id="btn_go" type="button">Go</button>
+        <br />
+        <button id="btn_bookmark" type="button">Bookmark</button>
+        <br />
+        <!-- <span class="feedback" id="fb_scroll"></span> -->
+        <span class="feedback" id="fb_page"></span>
+        <span class="feedback" id="fb_zoom"></span>
+        <span class="feedback" id="fb_load"></span>
+        <div class="pageCount">Page count</div>
+      </div>
+    </div>
+    <div class="images" style="width: 50%"></div>
+  </body>
+</html>
